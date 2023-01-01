@@ -17,7 +17,7 @@ class `CmnScheduleCalendarBean` {
 
     var lastDateYmd: String? = null
 
-    var calendarList: List<Int>? = null
+    var calendarList: List<Int?>? = null
 
     var nowYm: String? = null
 
