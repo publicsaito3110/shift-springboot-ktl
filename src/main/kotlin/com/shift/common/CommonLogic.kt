@@ -41,6 +41,28 @@ class CommonLogic {
 
 
     /**
+     * 最終日の日付取得処理
+     *
+     * year, monthからその年月の最終日の日付をString(YYYYMMDD)の8桁で返す
+     *
+     * @return String 最終日の日付(YYYYMMDD)
+     */
+    fun getLastDateYmd(year: Int, month: Int): String? {
+
+        try {
+
+            //現在の日付をLocalDateで取得し、ymd(YYYYMMDD)に変換する
+            val localDate = LocalDate.of(year, month, 1)
+            val lastDay: Int = localDate.lengthOfMonth()
+            return year.toString() + String.format("%02d", month) + String.format("%02d", lastDay)
+        } catch (e: Exception) {
+            //例外発生時、nullを返す
+            return null
+        }
+    }
+
+
+    /**
      * 年月変換処理
      *
      * <p>year(int), month(int)をString型ym(YYYYMM)に変換して返す</p>
