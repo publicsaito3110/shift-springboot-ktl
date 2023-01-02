@@ -4,5 +4,5 @@ package com.shift.domain.model.entity
  * @author saito
  *
  */
-class BaseEntity {
+open class BaseEntity {
 }
