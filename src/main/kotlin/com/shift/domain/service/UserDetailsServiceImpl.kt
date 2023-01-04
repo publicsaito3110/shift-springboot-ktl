@@ -38,6 +38,21 @@ class UserDetailsServiceImpl: BaseService(), UserDetailsService {
      */
     override fun loadUserByUsername(username: String): UserDetails {
 
+        // ログイン時に入力されたユーザIDから検索
+        val userEntityOpt: Optional<UserEntity> = userRepository.findById(username)
+
+        // ユーザIDと一致するユーザが存在しなかったとき
+        if (userEntityOpt.isPresent) {
+            throw UsernameNotFoundException("$username is not found");
+        }
+
+        // UserEntityで取得
+        val userEntity: UserEntity = userEntityOpt.get()
+
+        // User(UserDetailsインターフェースの実装クラス)に登録されているユーザ権限、ユーザID, パスワードをセットして返す
+        val grantedAuthorities: HashSet<GrantedAuthority> = HashSet<GrantedAuthority>()
+        grantedAuthorities.add(SimpleGrantedAuthority(userEntity.getAdminFlgFormatRole()))
+        return User(userEntity.id, userEntity.password, grantedAuthorities)
     }
 
 
