@@ -33,4 +33,41 @@ class SecurityConfig {
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
+
+
+    /**
+     * [Configuration] ログイン認証設定(Spring Security)
+     *
+     * ログイン認証で必要な情報を設定する
+     *
+     * @param httpSecurity ログイン認証の設定を格納
+     * @return SecurityFilterChain 設定済みのログイン認証情報
+     */
+    @Bean
+    @Throws(Exception::class)
+    fun securityFilterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
+        httpSecurity.formLogin { login: FormLoginConfigurer<HttpSecurity> ->
+            login
+                // ログイン画面のURL
+                .loginProcessingUrl("/login")
+                .loginPage("/login")
+                // ログイン成功時のURL
+                .defaultSuccessUrl("/login/auth")
+                // ログイン失敗時のURL
+                .failureUrl("/login?error")
+                .permitAll()
+        }.logout { logout: LogoutConfigurer<HttpSecurity> ->
+            logout
+                // ログアウト時のURL
+                .logoutSuccessUrl("/logout")
+        }.authorizeHttpRequests(
+            Customizer { auth ->
+                auth
+                    // static内のアクセスを許容するパス
+                    .requestMatchers(PathRequest.toStaticResources().atCommonLocations())
+                    .permitAll()
+            }
+        )
+        return httpSecurity.build()
+    }
 }
