@@ -16,6 +16,21 @@ public class Const {
 
         // DM
         const val DM_READ_FLG: String = "1"
+
+        // その他
+        const val ROLE_USER_ADMIN: String = "ROLE_ADMIN"
+        const val ROLE_USER_GENERAL: String = "ROLE_GENERAL"
+
+        const val SESSION_KEYWORD_ACCOUNT_BEAN: String = "SESSION_KEY1_ACCOUNT_BEAN"
+
+        //------------------
+        // 正規表現 (pattern)
+        //------------------
+
+        const val PATTERN_ROLE_USER_ADMIN: String = "1"
+
+        // User
+        const val PATTERN_USER_DEL_FLG: String = "1"
     }
 
 }
