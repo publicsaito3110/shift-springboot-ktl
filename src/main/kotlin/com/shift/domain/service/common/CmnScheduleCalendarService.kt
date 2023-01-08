@@ -3,6 +3,7 @@ package com.shift.domain.service.common
 import com.shift.common.CommonLogic
 import com.shift.common.CommonUtil
 import com.shift.domain.model.bean.CmnScheduleCalendarBean
+import com.shift.domain.service.BaseService
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -14,21 +15,38 @@ import java.time.LocalDate
  */
 @Service
 @Transactional
-class CmnScheduleCalendarService {
+class CmnScheduleCalendarService: BaseService() {
 
 
     /**
-     * [共通Service] カレンダー, YM作成処理
+     * [共通 Service] カレンダー, YM作成処理
+     *
+     * 指定されたymからカレンダー及び月次情報を取得する<br>
+     * ただし、指定された年月の値がnullまたは異常なときは現在の日付の年月となる
      *
      * @param ym 年月(YYYYMM)
      * @return CmnScheduleCalendarBean
      */
     fun generateCalendar(ym: String?): CmnScheduleCalendarBean {
 
-        //Beanにセット
-        var cmnScheduleCalendarBean: CmnScheduleCalendarBean = CmnScheduleCalendarBean()
+        // 指定された年月をそれぞれintで取得
         val yearMonthArray: Array<Int> = changeYearMonthArray(ym)
+        // 指定された日付から当月、翌月、前月をそれぞれ取得
         val nowNextBeforeYmArray: Array<String> = calcNowNextBeforeYmArray(yearMonthArray[0], yearMonthArray[1])
+        // 指定された年月のカレンダーを取得
+        val calendarList: List<Int?>  = calcCalendar(yearMonthArray[0], yearMonthArray[1])
+        // 最終日の日付を取得
+        val lastDateYmd: String? = calcLastDateYmd(yearMonthArray[0], yearMonthArray[1])
+
+        // Beanにセット
+        val cmnScheduleCalendarBean: CmnScheduleCalendarBean = CmnScheduleCalendarBean()
+        cmnScheduleCalendarBean.year = yearMonthArray[0]
+        cmnScheduleCalendarBean.month = yearMonthArray[1]
+        cmnScheduleCalendarBean.lastDateYmd = lastDateYmd
+        cmnScheduleCalendarBean.nowYm = nowNextBeforeYmArray[0]
+        cmnScheduleCalendarBean.afterYm = nowNextBeforeYmArray[1]
+        cmnScheduleCalendarBean.beforeYm = nowNextBeforeYmArray[2]
+        cmnScheduleCalendarBean.calendarList = calendarList
         return cmnScheduleCalendarBean;
     }
 
@@ -36,13 +54,12 @@ class CmnScheduleCalendarService {
     /**
      * 翌前月に取得処理
      *
-     *翌月と前月を計算して返す<br>
-     * ym(YYYYMM)に変換した現在の月[0], 翌月[1]と前月[2]
+     * 翌月と前月を計算して返す<br>
+     * ym(YYYYMM)に変換した年月 0: 現在, 1: 翌月, 2: 前月となる
      *
      * @param year LocalDateから取得した年(int)
      * @param month LocalDateから取得した月(int)
-     * @return String[] 現在の月[0], 翌月のym[1]と前月のym[2]<br></br>
-     * String[0]が現在の月, String[1]が翌月, String[2]が前月
+     * @return Array<String> 0: 現在の年月, 1: 翌月の年月, 2: 前月の年月
      */
     private fun calcNowNextBeforeYmArray(year: Int, month: Int): Array<String> {
 
@@ -77,13 +94,12 @@ class CmnScheduleCalendarService {
     /**
      * 年月変換処理
      *
-     * 年と月をint型に変換し、int[]で返す<br></br>
-     * ただし、パラメーターがない(null)場合またはymがフォーマット通りでないときは現在の年月になる<br></br>
-     * int[0]が年, int[1]が月
+     * 年と月をIntに変換し、返す<br>
+     * ただし、パラメーターがない(null)場合またはymがフォーマット通りでないときは現在の年月になる<br>
+     * 0: 年, 1: 月
      *
      * @param ym 年月(YYYYMM)
-     * @return int[] intに変換した年[0]と月[1]<br>
-     * int[0]が年, int[1]が月
+     * @return Array<Int> intに変換した年と月 0: 年, 1: 月
      */
     private fun changeYearMonthArray(ym: String?): Array<Int> {
 
@@ -113,7 +129,91 @@ class CmnScheduleCalendarService {
 
 
     /**
-     * [privateメソッド共通処理] LocalDate取得処理
+     * 最終日の日付計算処理
+     *
+     * year, monthから最終日の日付(YYYYMMDD)に変換する<br>
+     * ただし、指定された年月が異常なときはnullとなる
+     *
+     * @param year 年(int)
+     * @param month 月(int)
+     * @return String? 指定された年月の最終日の日付(YYYYMMDD)
+     */
+    private fun calcLastDateYmd(year: Int, month: Int): String? {
+
+        // 指定されたyear, monthを最終日の日付(YYYYMMDD)に変換
+        return CommonLogic().getLastDateYmd(year, month)
+    }
+
+
+    /**
+     * カレンダー作成処理
+     *
+     * year, monthから1ヵ月分のカレンダーを作成する<br>
+     * ただし、カレンダーのフォーマット(7×4 or 7×5 or 7×6)にするため、前月, 翌月も含む(前月, 翌月の日付は含まれない)<br>
+     * また、前月, 翌月分の日付はnullが格納される
+     *
+     * @param year 年(int)
+     * @param month 月(int)
+     * @return List<Int?> 1ヵ月分のカレンダー<br>
+     * 要素数は必ず7の倍数となり、前月または翌月の日付はnull, 当月の日付はIntが格納される
+     */
+    private fun calcCalendar(year: Int, month: Int): List<Int?> {
+
+        //------------------------------
+        // 第1週目の日曜日～初日までを設定
+        //------------------------------
+
+        // 指定された年月の1日目の情報をLocalDateで取得
+        val localDate: LocalDate = getLocalDateByYearMonth(year, month)
+
+        // 第1週目の初日の曜日を取得（月:1, 火:2, ....日:7）
+        val firstWeek: Int = localDate.dayOfWeek.value
+
+        // 日付けとスケジュールを格納
+        val calendarList: MutableList<Int?> = ArrayList()
+
+        // firstWeekが日曜日でないとき
+        if (firstWeek != 7) {
+
+            // 初日が日曜を除く取得した曜日の回数分nullを代入して第1週目のカレンダーのフォーマットに揃える
+            for (i in 1..firstWeek) {
+                calendarList.add(null)
+            }
+        }
+
+        //-------------
+        // 日付を設定
+        //-------------
+
+        // 最終日をLocalDateから取得
+        val lastDay: Int = localDate.lengthOfMonth()
+
+        // lastDayの回数だけループして日付を格納
+        for (i in 1..lastDay) {
+            calendarList.add(i)
+        }
+
+        //------------------------------
+        // 最終週の終了日～土曜日までを設定
+        //------------------------------
+
+        // calendarListに登録した要素数から残りの最終週の土曜日までの日数を取得
+        val remainderWeek: Int = 7 - calendarList.size % 7
+
+        // remainderWeekが7(最終日が土曜日)以外のとき
+        if (remainderWeek != 7) {
+
+            // remainderWeekの回数分nullを代入して最終週目のカレンダーのフォーマットに揃える
+            for (i in 1..remainderWeek) {
+                calendarList.add(null)
+            }
+        }
+        return calendarList
+    }
+
+
+    /**
+     * [private メソッド共通処理] LocalDate取得処理
      *
      * year(int), month(int)からLocalDateを返す<br>
      * ただし、正確な日付は指定した年月の初日となる
