@@ -1,4 +1,4 @@
-package com.shift.domain.model.bean
+package com.shift.domain.model.bean.collection
 
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor

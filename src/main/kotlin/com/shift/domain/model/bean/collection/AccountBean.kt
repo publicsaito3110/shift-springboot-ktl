@@ -1,4 +1,4 @@
-package com.shift.domain.model.bean
+package com.shift.domain.model.bean.collection
 
 import com.shift.domain.model.entity.UserEntity
 import lombok.AllArgsConstructor
