@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor
  */
 @AllArgsConstructor
 @NoArgsConstructor
-class `CmnScheduleCalendarBean` {
+class CmnScheduleCalendarBean {
 
     var year: Int = 0
 
@@ -21,7 +21,7 @@ class `CmnScheduleCalendarBean` {
 
     var nowYm: String? = null
 
-    var nextYm: String? = null
+    var afterYm: String? = null
 
     var beforeYm: String? = null
 }
