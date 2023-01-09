@@ -1,5 +1,6 @@
 package com.shift.domain.service
 
+import com.shift.common.CmnScheduleLogic
 import com.shift.common.Const
 import com.shift.domain.model.bean.CalendarBean
 import com.shift.domain.model.bean.CmnScheduleCalendarBean
@@ -35,10 +36,11 @@ class CalendarService: BaseService() {
     /**
      * [Service] カレンダー表示機能 (/calendar)
      *
-     * @param
+     * @param ym 表示したいカレンダーの年月
+     * @param loginUser ログインしているユーザID
      * @return CalendarBean
      */
-    fun calendar(ym: String?, loginUser: String): CalendarBean {
+    fun calendar(ym: String?, loginUser: String?): CalendarBean {
 
         // 共通サービスより指定された年月のカレンダーと日付情報を取得
         val cmnScheduleCalendarBean: CmnScheduleCalendarBean = cmnScheduleCalendarService.generateCalendar(ym)
@@ -46,6 +48,8 @@ class CalendarService: BaseService() {
         val scheduleEntity: ScheduleEntity? = selectSchedule(cmnScheduleCalendarBean.nowYm, loginUser)
         // 指定された年月のスケジュール時間を取得
         val scheduleTimeEntity: ScheduleTimeEntity? = selectScheduleTime(cmnScheduleCalendarBean.lastDateYmd)
+        // 日付ごとの確定スケジュールが登録されているか判定
+        val isScheduleAllArray: Array<Array<Boolean?>> = toIsScheduleAllArray(scheduleEntity, scheduleTimeEntity)
 
         // Beanにセット
         val calendarBean: CalendarBean = CalendarBean()
@@ -56,53 +60,54 @@ class CalendarService: BaseService() {
         calendarBean.beforeYm = cmnScheduleCalendarBean.beforeYm
         calendarBean.afterYm = cmnScheduleCalendarBean.afterYm
         calendarBean.scheduleEntity = scheduleEntity
+        calendarBean.scheduleTimeEntity = scheduleTimeEntity
+        calendarBean.isScheduleAllArray = isScheduleAllArray
         return calendarBean
     }
 
 
     /**
-     * 確定スケジュール判定Array取得処理
+     * 日付別確定スケジュール判定Array取得処理
      *
-     * scheduleEntityとscheduleTimeListから登録済みのスケジュールとスケジュール時間区分を取得し、確定スケジュールが登録されているかを判別する<br>
+     * scheduleEntityとscheduleTimeListから日付ごとのスケジュール時間区分に確定スケジュールが登録されているかを判別する<br>
      * Listのエレメント(Boolean[])には1日ごとのスケジュール時間区分で登録済みかを判別する
      *
      * @param scheduleEntity DBから取得したscheduleEntity
-     * @param scheduleTime DBから取得したScheduleTimeEntity
-     * @return Array<Array<Boolean?>>　<br>
-     * 1: 日付(1～31日), 2: スケジュール時間(スケジュール登録可能数)<br>
-     * true: スケジュール登録済み, false: スケジュール未登録
+     * @param scheduleTimeEntity DBから取得したScheduleTimeEntity
+     * @return Array<Array<Boolean?>> <br>
+     * Element 1: 日付(1～31日), 2: スケジュール時間(スケジュール登録可能数)<br>
+     * true: スケジュール登録済み<br>
+     * false: スケジュール未登録
      */
-    private fun calcIsScheduleRecordedArray(scheduleEntity: ScheduleEntity?, scheduleTime: ScheduleTimeEntity): Array<Array<Boolean?>> {
+    private fun toIsScheduleAllArray(scheduleEntity: ScheduleEntity?, scheduleTimeEntity: ScheduleTimeEntity?): Array<Array<Boolean?>> {
 
-        //scheduleEntityがnullでないとき、scheduleEntityを代入
+        // scheduleEntityがnullでないとき、scheduleEntityを代入
         var trimScheduleEntity: ScheduleEntity = ScheduleEntity()
         if (scheduleEntity != null) {
             trimScheduleEntity = scheduleEntity
         }
 
-        //スケジュール登録を判別するBoolean[日付][スケジュール時間]の配列
-        val isScheduleDisplayArray: Array<Array<Boolean?>> = Array(31) {
+        // スケジュール登録を判別するBoolean[日付][スケジュール時間]の配列
+        val isScheduleAllArray: Array<Array<Boolean?>> = Array(31) {
             arrayOfNulls(Const.SCHEDULE_RECORDABLE_MAX_DIVISION)
         }
 
-        //trimSchedulePreEntityに登録されている値(1ヵ月分)をListで取得
+        // 確定スケジュールをListで取得
         val scheduleList: List<String?> = trimScheduleEntity.getScheduleDayList()
 
-        //スケジュール登録済みかを判定する共通Logicクラス
-        val cmnScheduleLogic = CmnScheduleLogic()
+        // スケジュールを判定する共通Logicクラス
+        val cmnScheduleLogic: CmnScheduleLogic = CmnScheduleLogic()
 
-        //scheduleListの要素数(1ヵ月の日付)の回数だけループする
+        // 登録済みの確定スケジュールの日付数だけループする
         for (i in scheduleList.indices) {
 
-            //スケジュールが登録されているかどうかを判別する配列(1日ごとのスケジュールにおいて要素0 -> scheduleTimeList(0), 要素1 -> scheduleTimeList(1)...)
-            val isScheduleRecordedArray: Array<Boolean?> = cmnScheduleLogic.toIsScheduleRecordedArrayBySchedule(
-                scheduleList[i], scheduleTime
-            )
+            // スケジュール時間区分ごとのスケジュールが登録されているかどうかを判別した配列を取得
+            val isScheduleArray: Array<Boolean?> = cmnScheduleLogic.toIsScheduleArray(scheduleList[i], scheduleTimeEntity)
 
-            //isScheduleDisplayArrayの1次元目i(日付)を指定し、2次元目(スケジュール時間区分)にセットする
-            isScheduleDisplayArray[i] = isScheduleRecordedArray
+            // 対象の日付に判定したスケジュール情報をセットする
+            isScheduleAllArray[i] = isScheduleArray
         }
-        return isScheduleDisplayArray
+        return isScheduleAllArray
     }
 
 
