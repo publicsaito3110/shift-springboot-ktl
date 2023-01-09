@@ -116,9 +116,18 @@ class ScheduleEntity: BaseEntity() {
     var day31: String? = null
 
 
+    /**
+     * 確定スケジュールList取得処理
+     *
+     * 日付ごとの確定スケジュールを日付順でListで取得する<br>
+     * ただし、確定スケジュールがnullまたは空文字でも格納される
+     *
+     * @param
+     * @return List<String?> 登録済みの確定スケジュールを格納したList
+     */
     fun getScheduleDayList(): List<String?> {
 
-        // 日付のフィールドをListで全て取得
+        // 確定スケジュールを日付順でListに格納
         val dayList: MutableList<String?> = ArrayList()
         dayList.add(day1)
         dayList.add(day2)
