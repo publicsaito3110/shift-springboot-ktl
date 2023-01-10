@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository
  *
  */
 @Repository
-interface ScheduleRepository: BaseRepository<Int, ScheduleEntity> {
+interface ScheduleRepository: BaseRepository<ScheduleEntity, Int> {
 
     /**
      * [Repository] ユーザ確定スケジュール検索処理
