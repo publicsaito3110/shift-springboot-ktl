@@ -2,7 +2,7 @@ package com.shift.domain.service
 
 import com.shift.common.CommonUtil
 import com.shift.common.Const
-import com.shift.domain.model.bean.AccountBean
+import com.shift.domain.model.bean.collection.AccountBean
 import com.shift.domain.model.bean.LoginAuthBean
 import com.shift.domain.model.entity.UserEntity
 import com.shift.domain.repository.UserRepository
@@ -39,7 +39,7 @@ class LoginService: BaseService() {
      */
     open fun loginAuth(loginUser: String?): LoginAuthBean {
 
-        // メールからログインユーザを取得する
+        // ユーザIDからログインユーザを取得する
         val userEntity: UserEntity? = selectUser(loginUser)
         // 取得したユーザがログイン可能ユーザかどうか判定する
         val isLogin: Boolean = isCheckLoginUser(userEntity)
@@ -99,18 +99,18 @@ class LoginService: BaseService() {
      */
     private fun isCheckLoginUser(userEntity: UserEntity?): Boolean {
 
-        //　ログイン情報からユーザーを取得できなかったとき
+        // ログイン情報からユーザーを取得できなかったとき
         if (userEntity == null) {
 
-            //　エラーメッセージをセットし、falseを返す
+            // エラーメッセージをセットし、falseを返す
             errorMassage = "IDまたはパスワードが違います"
             return false
         }
 
-        //　退職済みだったとき
+        // 退職済みだったとき
         if (userEntity.delFlgFormatTF()) {
 
-            //　エラーメッセージをセットし、falseを返す
+            // エラーメッセージをセットし、falseを返す
             errorMassage = "このユーザーは現在ログインできません"
             return false
         }
