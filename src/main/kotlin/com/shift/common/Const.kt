@@ -16,6 +16,9 @@ public class Const {
         //-----------
         const val SCHEDULE_RECORDABLE_MAX_DIVISION: Int = 7
         const val SCHEDULE_DAY_RECORDED: String = "1"
+        val SCHEDULE_HTML_CLASS_DISPLAY_COLOR_ARRAY: Array<String> = arrayOf("teal", "orange", "pink", "yellow", "purple", "cyan", "gray")
+        val SCHEDULE_HTML_CLASS_DISPLAY_BG_COLOR_ARRAY: Array<String> = arrayOf("bg-teal", "bg-orange", "bg-pink", "bg-yellow", "bg-purple", "bg-cyan", "bg-gray")
+        val SCHEDULE_HTML_CLASS_DISPLAY_BTN_COLOR_ARRAY: Array<String> = arrayOf("btn-teal", "btn-orange", "btn-pink", "btn-yellow", "btn-purple", "btn-cyan", "btn-gray")
 
         //-----
         // DM
