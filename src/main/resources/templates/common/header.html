@@ -1,0 +1,84 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>ヘッダー</title>
+</head>
+<body>
+    <nav class="main-menu">
+        <div>
+            <a class="logo" href="http://startific.com"> </a>
+        </div>
+        <div class="settings"></div>
+        <div class="scrollbar" id="style-1">
+            <ul>
+                <li>
+                    <a href="/home">
+                        <i class="bi bi-house"></i>
+                        <span class="nav-text">ホーム</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/calendar">
+                        <i class="bi bi-card-checklist"></i>
+                        <span class="nav-text">カレンダー</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/dm" class="position-relative">
+                        <i class="bi bi-envelope"></i>
+                        <span class="nav-text">メッセージ</span>
+                        <span th:if="${#httpSession.getAttribute('KEY2_SESSION_DM_UNREAD_COUNT') != 0}" th:text="${#httpSession.getAttribute('KEY2_SESSION_DM_UNREAD_COUNT')}" class="badge bg-primary rounded-pill position-absolute start-0"></span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/schedule">
+                        <i class="bi bi-calendar-plus"></i>
+                        <span class="nav-text">シフト提出</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/user">
+                        <i class="bi bi-person-fill"></i>
+                        <span class="nav-text">ユーザー</span>
+                    </a>
+                </li>
+                <th:block sec:authorize="hasRole('ADMIN')">
+                    <li class="darkerlishadow">
+                        <a href="/schedule-decision">
+                            <i class="bi bi-calendar-check"></i>
+                            <span class="nav-text">シフト登録</span>
+                        </a>
+                    </li>
+                    <li class="darkerli">
+                        <a href="/news-edit">
+                            <i class="bi bi-pencil-square"></i>
+                            <span class="nav-text">お知らせ編集</span>
+                        </a>
+                    </li>
+                    <li class="darkerli">
+                        <a href="/user/list">
+                            <i class="bi bi-people-fill"></i>
+                            <span class="nav-text">ユーザー一覧</span>
+                        </a>
+                    </li>
+                    <li class="darkerlishadowdown">
+                        <a href="/shift-edit">
+                            <i class="bi bi-card-list"></i>
+                            <span class="nav-text">勤務時間編集</span>
+                        </a>
+                    </li>
+                </th:block>
+            </ul>
+            <ul class="logout">
+                <li>
+                    <a href="/logout">
+                        <i class="bi bi-box-arrow-left"></i>
+                        <span class="nav-text">ログアウト</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+</body>
+</html>
