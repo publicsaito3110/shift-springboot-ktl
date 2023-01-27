@@ -48,7 +48,7 @@ class LoginAspect {
         }
 
         // セッションを取得
-        val accountBean: AccountBean? = httpSession.getAttribute(Const.SESSION_KEYWORD_ACCOUNT_BEAN) as AccountBean
+        val accountBean: AccountBean? = httpSession.getAttribute(Const.SESSION_KEYWORD_ACCOUNT_BEAN) as? AccountBean
 
         // 現在のURIを取得
         val request: HttpServletRequest = (RequestContextHolder.getRequestAttributes() as ServletRequestAttributes?)!!.request
