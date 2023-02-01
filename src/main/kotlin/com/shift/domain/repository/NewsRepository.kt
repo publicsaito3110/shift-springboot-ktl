@@ -24,5 +24,5 @@ interface NewsRepository: BaseRepository<NewsEntity, Int> {
      * @return List<NewsEntity> お知らせ
      **/
     @Query(value = "SELECT n.* FROM news n WHERE n.ymd <= :ymd ORDER BY n.ymd DESC LIMIT :limit", nativeQuery = true)
-    fun selectNewsNow(ymd: String?, limit: Int?): List<NewsEntity>?
+    fun selectNewsNow(ymd: String?, limit: Int?): List<NewsEntity>
 }
