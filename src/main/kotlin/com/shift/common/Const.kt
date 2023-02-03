@@ -12,6 +12,13 @@ public class Const {
     companion object {
 
         //-----------
+        // NEWS
+        //-----------
+        const val NEWS_HOME_DISPLAY_NEW_ICON_LIMIT_DAY: Long = 14
+        const val NEWS_HOME_DISPLAY_LIMIT: Int = 5
+        const val NEWS_HOME_SRC_NEW_ICON: String = "/"
+
+        //-----------
         // Schedule
         //-----------
         const val SCHEDULE_RECORDABLE_MAX_DIVISION: Int = 7
