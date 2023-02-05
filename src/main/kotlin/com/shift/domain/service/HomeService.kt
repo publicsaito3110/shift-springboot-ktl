@@ -2,6 +2,8 @@ package com.shift.domain.service
 
 import com.shift.common.CmnScheduleLogic
 import com.shift.common.CommonLogic
+import com.shift.domain.model.bean.HomeBean
+import com.shift.domain.model.bean.collection.HomeDayScheduleBean
 import com.shift.domain.model.entity.ScheduleEntity
 import com.shift.domain.model.entity.ScheduleTimeEntity
 import com.shift.domain.model.entity.UserEntity
@@ -44,23 +46,23 @@ class HomeService: BaseService() {
      */
     fun home(ymd: String, loginUser: String): HomeBean {
 
-        //Service内の処理を実行
-        val userEntity = selectUserByLoginUser(loginUser)
-        //CmnNewsService(共通サービス)から表示可能なお知らせを取得
+        // ユーザ情報を取得
+        val userEntity: UserEntity? = selectUserByLoginUser(loginUser)
+        // 共通サービスから表示可能なお知らせを取得
         val cmnNewsBean: CmnNewsBean = cmnNewsService.generateDisplayNowNews()
-        //指定された日付とその日付の1週間前後の日付をymdで取得
+        // 指定された日付とその日付の1週間前後の日付をymdで取得
         val nowBeforeAfterWeekYmdArray = calcNowBeforeAfterWeekYmdArray(ymd)
-        //現在の日付から1日ごと(1週間分)に確定スケジュールを取得
+        // 現在の日付から1日ごと(1週間分)に確定スケジュールを取得
         val oneweekScheduleList = selectScheduleForOnweek(nowBeforeAfterWeekYmdArray[0], loginUser)
-        //現在の日付から1日ごと(1週間分)にスケジュール時間区分を取得
+        // 現在の日付から1日ごと(1週間分)にスケジュール時間区分を取得
         val oneweekScheduleTimeList = selectScheduleTimeForOneweek(nowBeforeAfterWeekYmdArray[0])
-        //取得したスケジュールから表示するスケジュールを1週間分のカレンダーで取得
+        // 取得したスケジュールから表示するスケジュールを1週間分のカレンダーで取得
         val dayScheduleList: List<HomeDayScheduleBean> = generateOneWeekCalendar(
             oneweekScheduleList, oneweekScheduleTimeList,
             nowBeforeAfterWeekYmdArray[0]
         )
 
-        //Beanにセット
+        // Beanにセット
         val homeBean = HomeBean()
         homeBean.setBeforeWeekYmd(nowBeforeAfterWeekYmdArray[1])
         homeBean.setAfterWeekYmd(nowBeforeAfterWeekYmdArray[2])
@@ -74,19 +76,17 @@ class HomeService: BaseService() {
     /**
      * 前翌週日付計算処理
      *
-     *
-     * 指定された日付から指定された日付と1週間前の日付と1週間後の日付をymd(YYYYMMDD)で取得する<br></br>
-     * ただし、指定された日付がないまたは指定された日付が異常な値だった場合は現在の日付となる<br></br>
+     * 指定された日付から指定された日付と1週間前の日付と1週間後の日付をymd(YYYYMMDD)で取得する<br>
+     * ただし、指定された日付がないまたは指定された日付が異常な値だった場合は現在の日付となる<br>
      * String[0]が指定された日付, String[1]が指定された日付の1週間前の日付, String[2]が指定された日付の1週間後の日付
      *
-     *
      * @param ymd RequestParameter 日付ymd
-     * @return String[] ymdフォーマットに変換された日付<br></br>
+     * @return String[] ymdフォーマットに変換された日付<br>
      * String[0]が指定された日付, String[1]が指定された日付の1週間前の日付, String[2]が指定された日付の1週間後の日付
      */
     private fun calcNowBeforeAfterWeekYmdArray(ymd: String): Array<String> {
 
-        //指定された日付のLocalDateを取得
+        // 指定された日付のLocalDateを取得
         val commonLogic = CommonLogic()
         var ymdLd: LocalDate? = commonLogic.getLocalDateByYmd(ymd)
 
@@ -100,8 +100,7 @@ class HomeService: BaseService() {
         val beforeWeekLd = ymdLd.minusWeeks(1)
 
         //指定された日付と1週間後の日付をymdで取得
-        val nowYmd: String =
-            commonLogic.toStringYmdByYearMonthDay(ymdLd.year, ymdLd.monthValue, ymdLd.dayOfMonth)
+        val nowYmd: String = commonLogic.toStringYmdByYearMonthDay(ymdLd.year, ymdLd.monthValue, ymdLd.dayOfMonth)
         val afterWeekYmd: String =
             commonLogic.toStringYmdByYearMonthDay(afterWeekLd.year, afterWeekLd.monthValue, afterWeekLd.dayOfMonth)
         val beforeWeekYmd: String =
