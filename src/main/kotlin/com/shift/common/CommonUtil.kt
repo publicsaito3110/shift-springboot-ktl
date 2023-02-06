@@ -1,5 +1,7 @@
 package com.shift.common
 
+import java.time.LocalDate
+
 
 /**
  * @author saito
@@ -29,6 +31,22 @@ class CommonUtil {
             }
 
             return value
+        }
+
+
+        /**
+         * 現在の日付取得処理
+         *
+         * 現在の日付をymd(YYYYMMDD)で取得
+         *
+         * @return String 現在の日付
+         */
+        fun getNowYmd(): String {
+            val localDate = LocalDate.now()
+            val nowYear = localDate.year
+            val nowMonth = localDate.monthValue
+            val nowDay = localDate.dayOfMonth
+            return nowYear.toString() + String.format("%02d", nowMonth) + String.format("%02d", nowDay);
         }
 
 
