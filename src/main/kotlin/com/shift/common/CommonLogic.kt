@@ -22,12 +22,12 @@ class CommonLogic {
      */
     fun getLocalDate(ymd: String?): LocalDate? {
 
-        // ymdがnullまたは8桁でないとき
-        if (ymd == null || ymd.length != 8) {
-            return null
-        }
-
         try {
+
+            // ymdがnullまたは8桁でないとき
+            if (ymd == null || ymd.length != 8) {
+                return null
+            }
 
             // ymdをLocalDateに変換する
             val ymdDate = ymd.substring(0, 4) + "-" + ymd.substring(4, 6) + "-" + ymd.substring(6, 8)
@@ -65,15 +65,28 @@ class CommonLogic {
     /**
      * 年月変換処理
      *
-     * <p>year(int), month(int)をString型ym(YYYYMM)に変換して返す</p>
+     * year, monthから年月(YYYYMM)に変換して返す
      *
-     * @param year 年(int)
-     * @param month 月(int)
-     * @return String ym(YYYYMM)
+     * @param year 年
+     * @param month 月
+     * @return String 年月ym(YYYYMM)
      */
     fun toStringYm(year: Int, month: Int): String {
-
-        //ym(YYYYMM)に変換する
         return year.toString() + String.format("%02d", month)
+    }
+
+
+    /**
+     * 日付変換処理
+     *
+     * year, month, dayから日付(YYYYMMDD)に変換して返す
+     *
+     * @param year 年
+     * @param month 月
+     * @param day 日
+     * @return String 日付(YYYYMMDD)
+     */
+    fun toStringYmd(year: Int, month: Int, day: Int): String {
+        return year.toString() + String.format("%02d", month) + String.format("%02d", day)
     }
 }
