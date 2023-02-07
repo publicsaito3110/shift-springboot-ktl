@@ -1,6 +1,7 @@
 package com.shift.domain.repository
 
 import com.shift.domain.model.entity.ScheduleEntity
+import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
 
@@ -22,5 +23,6 @@ interface ScheduleRepository: BaseRepository<ScheduleEntity, Int> {
      * @param userId 取得したいユーザID
      * @return ScheduleEntity
      */
-    fun findByYmAndUser(ym: String?, userId: String?): ScheduleEntity?
+    @Query(value = "SELECT s.* FROM schedule WHERE s.ym = :ym AND s.user = :userId;", nativeQuery = true)
+    fun selectSchedule(ym: String?, userId: String?): ScheduleEntity?
 }
