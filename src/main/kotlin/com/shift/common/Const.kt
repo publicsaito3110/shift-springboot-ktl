@@ -21,6 +21,7 @@ public class Const {
         //-----------
         // Schedule
         //-----------
+        const val SCHEDULE_HOME_CALENDAR_DISPLAY_LIMIT_DAY: Long = 7
         const val SCHEDULE_RECORDABLE_MAX_DIVISION: Int = 7
         const val SCHEDULE_DAY_RECORDED: String = "1"
         val SCHEDULE_HTML_CLASS_DISPLAY_COLOR_ARRAY: Array<String> = arrayOf("teal", "orange", "pink", "yellow", "purple", "cyan", "gray")
