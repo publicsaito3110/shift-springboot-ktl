@@ -2,15 +2,18 @@ package com.shift.domain.service
 
 import com.shift.common.CmnScheduleLogic
 import com.shift.common.CommonLogic
+import com.shift.common.Const
 import com.shift.domain.model.bean.HomeBean
-import com.shift.domain.model.bean.collection.HomeDayScheduleBean
+import com.shift.domain.model.bean.collection.ScheduleDayBean
 import com.shift.domain.model.entity.ScheduleEntity
 import com.shift.domain.model.entity.ScheduleTimeEntity
 import com.shift.domain.model.entity.UserEntity
 import com.shift.domain.repository.ScheduleRepository
 import com.shift.domain.repository.ScheduleTimeRepository
 import com.shift.domain.repository.UserRepository
+import com.shift.domain.service.common.CmnNewsService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
@@ -44,31 +47,28 @@ class HomeService: BaseService() {
      * @param loginUser Authenticationから取得したログインユーザID
      * @return HomeBean
      */
-    fun home(ymd: String, loginUser: String): HomeBean {
+    fun home(ymd: String?, loginUser: String?): HomeBean {
 
-        // ユーザ情報を取得
-        val userEntity: UserEntity? = selectUserByLoginUser(loginUser)
         // 共通サービスから表示可能なお知らせを取得
-        val cmnNewsBean: CmnNewsBean = cmnNewsService.generateDisplayNowNews()
+        val cmnNewsBean = cmnNewsService.generateDisplayNews()
+        // ユーザ情報を取得
+        val userEntity: UserEntity? = selectUser(loginUser)
         // 指定された日付とその日付の1週間前後の日付をymdで取得
-        val nowBeforeAfterWeekYmdArray = calcNowBeforeAfterWeekYmdArray(ymd)
+        val nowBeforeAfterWeekYmdArray: Array<String> = calcNowBeforeAfterWeekYmdArray(ymd)
         // 現在の日付から1日ごと(1週間分)に確定スケジュールを取得
-        val oneweekScheduleList = selectScheduleForOnweek(nowBeforeAfterWeekYmdArray[0], loginUser)
+        val scheduleList: List<ScheduleEntity?> = selectScheduleForHome(nowBeforeAfterWeekYmdArray[0], loginUser)
         // 現在の日付から1日ごと(1週間分)にスケジュール時間区分を取得
-        val oneweekScheduleTimeList = selectScheduleTimeForOneweek(nowBeforeAfterWeekYmdArray[0])
+        val scheduleTimeList: List<ScheduleTimeEntity?> = selectScheduleTimeForHome(nowBeforeAfterWeekYmdArray[0])
         // 取得したスケジュールから表示するスケジュールを1週間分のカレンダーで取得
-        val dayScheduleList: List<HomeDayScheduleBean> = generateOneWeekCalendar(
-            oneweekScheduleList, oneweekScheduleTimeList,
-            nowBeforeAfterWeekYmdArray[0]
-        )
+        val scheduleDayList: List<ScheduleDayBean> = generateCalendarForHome(scheduleList, scheduleTimeList, nowBeforeAfterWeekYmdArray[0])
 
         // Beanにセット
         val homeBean = HomeBean()
-        homeBean.setBeforeWeekYmd(nowBeforeAfterWeekYmdArray[1])
-        homeBean.setAfterWeekYmd(nowBeforeAfterWeekYmdArray[2])
-        homeBean.setUserEntity(userEntity)
-        homeBean.setNewsList(cmnNewsBean.getNewsList())
-        homeBean.setDayScheduleList(dayScheduleList)
+        homeBean.beforeWeekYmd = nowBeforeAfterWeekYmdArray[1]
+        homeBean.afterWeekYmd = nowBeforeAfterWeekYmdArray[2]
+        homeBean.userEntity = userEntity
+        homeBean.newsList = cmnNewsBean.newsList
+        homeBean.scheduleDayList = scheduleDayList
         return homeBean
     }
 
@@ -76,213 +76,204 @@ class HomeService: BaseService() {
     /**
      * 前翌週日付計算処理
      *
-     * 指定された日付から指定された日付と1週間前の日付と1週間後の日付をymd(YYYYMMDD)で取得する<br>
-     * ただし、指定された日付がないまたは指定された日付が異常な値だった場合は現在の日付となる<br>
-     * String[0]が指定された日付, String[1]が指定された日付の1週間前の日付, String[2]が指定された日付の1週間後の日付
+     * 指定された日付から指定された日付, 1週間前の日付, 1週間後の日付をymd(YYYYMMDD)で取得する<br>
+     * ただし、指定された日付がないまたは指定された日付が異常な値だった場合は現在の日付となる
      *
      * @param ymd RequestParameter 日付ymd
-     * @return String[] ymdフォーマットに変換された日付<br>
-     * String[0]が指定された日付, String[1]が指定された日付の1週間前の日付, String[2]が指定された日付の1週間後の日付
+     * @return Array<String> ymdフォーマットに変換された日付<br>
+     * 0: 指定された日付, 1: 指定された日付の1週間前の日付, 2: 指定された日付の1週間後の日付
      */
-    private fun calcNowBeforeAfterWeekYmdArray(ymd: String): Array<String> {
+    private fun calcNowBeforeAfterWeekYmdArray(ymd: String?): Array<String> {
 
         // 指定された日付のLocalDateを取得
         val commonLogic = CommonLogic()
-        var ymdLd: LocalDate? = commonLogic.getLocalDateByYmd(ymd)
+        var ymdLd: LocalDate? = commonLogic.getLocalDate(ymd)
 
-        //ymdが指定されていないまたは指定した日付が取得できなかったとき、現在の日付のLocalDateを取得
+        // ymdが指定されていないまたは指定した日付が取得できなかったとき、現在の日付のLocalDateを取得
         if (ymdLd == null) {
             ymdLd = LocalDate.now()
         }
 
-        //指定された日付の1週間後のLocalDateを取得
+        // 指定された日付の1週間前後の日付をLocalDateで取得
         val afterWeekLd = ymdLd!!.plusWeeks(1)
         val beforeWeekLd = ymdLd.minusWeeks(1)
 
-        //指定された日付と1週間後の日付をymdで取得
-        val nowYmd: String = commonLogic.toStringYmdByYearMonthDay(ymdLd.year, ymdLd.monthValue, ymdLd.dayOfMonth)
-        val afterWeekYmd: String =
-            commonLogic.toStringYmdByYearMonthDay(afterWeekLd.year, afterWeekLd.monthValue, afterWeekLd.dayOfMonth)
-        val beforeWeekYmd: String =
-            commonLogic.toStringYmdByYearMonthDay(beforeWeekLd.year, beforeWeekLd.monthValue, beforeWeekLd.dayOfMonth)
+        // 指定された日付と1週間後の日付をymdで取得
+        val nowYmd = commonLogic.toStringYmd(ymdLd.year, ymdLd.monthValue, ymdLd.dayOfMonth)
+        val afterWeekYmd = commonLogic.toStringYmd(afterWeekLd.year, afterWeekLd.monthValue, afterWeekLd.dayOfMonth)
+        val beforeWeekYmd = commonLogic.toStringYmd(beforeWeekLd.year, beforeWeekLd.monthValue, beforeWeekLd.dayOfMonth)
 
-        //配列に格納し、返す
+        // 配列に格納し、返す
         return arrayOf(nowYmd, beforeWeekYmd, afterWeekYmd)
     }
 
 
     /**
-     * 1週間カレンダー取得処理
+     * ホームカレンダー取得処理
      *
+     * 取得したスケジュール情報と指定された日付からホーム画面用のカレンダーに変換する<br>
+     * ただし、カレンダー生成時に年月をまたぐ場合は、スケジュール情報は要素数は2でないとならない<br>
+     * 各エレメントは1日ごとに日付, 確定スケジュール判定, スケジュール時間区分が格納される
      *
-     * 取得したスケジュールと指定された日付から1週間の確定スケジュールをカレンダー形式に変換する<br></br>
-     * 1日ごとに日付, 確定スケジュール判定, スケジュール時間区分が格納される
-     *
-     *
-     * @param oneweekScheduleList DBから取得したList
-     * @param oneweekScheduleTimeList DBから取得したList
-     * @param nowYmd ymdフォーマットで取得した日付
-     * @return List<HomeDayScheduleBean> 1週間のスケジュール情報<br></br>
-     * フィールド(List&lt;HomeDayScheduleBean&gt;)<br></br>
-     * month, day, week, isScheduleRecordedArray, scheduleTimeEntity
-    </HomeDayScheduleBean> */
-    private fun generateOneWeekCalendar(
-        oneweekScheduleList: List<ScheduleEntity?>,
-        oneweekScheduleTimeList: List<ScheduleTimeEntity?>,
-        nowYmd: String
-    ): List<HomeDayScheduleBean> {
+     * @param scheduleEntityList 確定スケジュール(要素数は2以下)
+     * @param scheduleTimeList スケジュール時間区分(要素数は2以下)
+     * @param nowYmd カレンダー表示開始日付
+     * @return List<ScheduleDayBean> ホーム画面用のカレンダー<br>
+     * エレメント: 一日ごとのスケジュール情報
+     **/
+    private fun generateCalendarForHome(scheduleEntityList: List<ScheduleEntity?>, scheduleTimeList: List<ScheduleTimeEntity?>, nowYmd: String?): List<ScheduleDayBean> {
 
-        //1週間のスケジュール情報を格納するための変数
-        val dayScheduleList: MutableList<HomeDayScheduleBean> = ArrayList<HomeDayScheduleBean>()
+        // 1日ごとのスケジュール情報を格納するための変数
+        val scheduleDayList: MutableList<ScheduleDayBean> = ArrayList<ScheduleDayBean>()
 
-        //スケジュールが登録されているか判定するクラス
+        // 指定された日付をLocalDateで取得
         val cmnScheduleLogic = CmnScheduleLogic()
-
-        //指定された日付をLocalDateで取得
         val commonLogic = CommonLogic()
-        val nowYmdLd: LocalDate = commonLogic.getLocalDateByYmd(nowYmd)
+        val nowYmdLd: LocalDate? = commonLogic.getLocalDate(nowYmd)
 
-        //1日ごと(1週間分)に取得した確定スケジュールだけループする
-        for (i in 0 until Const.HOME_DISPLAY_SCHEDULE_DAY) {
+        // 現在位からホーム画面に表示する日付までループ
+        for (i in 0 until Const.SCHEDULE_HOME_CALENDAR_DISPLAY_LIMIT_DAY) {
 
-            //現在のループ回数の要素目のスケジュールをScheduleEntityに格納
-            var scheduleEntity = oneweekScheduleList[i]
+            // ループ中の日付をLocalDateで取得
+            val localDate: LocalDate? = nowYmdLd!!.plusDays(i)
 
-            //スケジュールが登録されていなかったとき、インスタンス化
-            if (scheduleEntity == null) {
-                scheduleEntity = ScheduleEntity()
+            // 開始日の年月とループ中の年月が同じとき
+            if (nowYmdLd.dayOfMonth == localDate!!.dayOfMonth) {
+
+               // カレンダーの日付に該当する確定スケジュールを取得
+                val scheduleList = scheduleEntityList[0]!!.getScheduleDayList()
+                val day = localDate.dayOfMonth
+                val schedule = scheduleList[day - 1]
+
+                // 確定スケジュールを登録済みか判定
+                val scheduleTimeEntity = scheduleTimeList[0]
+                val isScheduleRecordedArray: Array<Boolean?> = cmnScheduleLogic.toIsScheduleArray(schedule, scheduleTimeEntity)
+
+                // スケジュール情報をBeanにセットし、追加する
+                val scheduleDayBean = ScheduleDayBean()
+                scheduleDayBean.isScheduleRecordedArray = isScheduleRecordedArray
+                scheduleDayBean.scheduleTimeEntity = scheduleTimeEntity
+                scheduleDayBean.week = localDate.dayOfWeek.value
+                scheduleDayBean.month = localDate.monthValue
+                scheduleDayBean.day = day
+                scheduleDayList.add(scheduleDayBean)
+                continue
+            } else {
+                // 開始日の年月とループ中の年月が異なるとき
+
+                // カレンダーの日付に該当する確定スケジュールを取得
+                val scheduleList = scheduleEntityList[1]!!.getScheduleDayList()
+                val day = localDate.dayOfMonth
+                val schedule = scheduleList[day - 1]
+
+                // 確定スケジュールを登録済みか判定
+                val scheduleTimeEntity = scheduleTimeList[1]
+                val isScheduleRecordedArray: Array<Boolean?> = cmnScheduleLogic.toIsScheduleArray(schedule, scheduleTimeEntity)
+
+                // スケジュール情報をBeanにセットし、追加する
+                val scheduleDayBean = ScheduleDayBean()
+                scheduleDayBean.isScheduleRecordedArray = isScheduleRecordedArray
+                scheduleDayBean.scheduleTimeEntity = scheduleTimeEntity
+                scheduleDayBean.week = localDate.dayOfWeek.value
+                scheduleDayBean.month = localDate.monthValue
+                scheduleDayBean.day = day
+                scheduleDayList.add(scheduleDayBean)
+                continue
             }
-
-            //スケジュールから日付ごとのスケジュールをListで取得
-            val scheduleDayList: List<String> = scheduleEntity.getDayList()
-
-            //ループ回数 + 指定された日付の日をintで取得
-            val localDate = nowYmdLd.plusDays(i.toLong())
-            val day = localDate.dayOfMonth
-
-            //日付からスケジュールを取得
-            val index = day - 1
-            val schedule = scheduleDayList[index]
-
-            //日付からスケジュールが登録されているかを判定した配列を取得
-            val scheduleTimeEntity = oneweekScheduleTimeList[i]
-            val isScheduleRecordedArray: Array<Boolean> = cmnScheduleLogic.toIsScheduleRecordedArrayBySchedule(
-                schedule,
-                oneweekScheduleTimeList[i]
-            )
-
-            //スケジュール情報をHomeDayScheduleBeanにセットし、Listへ格納
-            val homeDayScheduleBean = HomeDayScheduleBean()
-            homeDayScheduleBean.setIsScheduleRecordedArray(isScheduleRecordedArray)
-            homeDayScheduleBean.setScheduleTimeEntity(scheduleTimeEntity)
-            homeDayScheduleBean.setWeek(localDate.dayOfWeek.value)
-            homeDayScheduleBean.setMonth(localDate.monthValue)
-            homeDayScheduleBean.setDay(day)
-            dayScheduleList.add(homeDayScheduleBean)
         }
-        return dayScheduleList
+        return scheduleDayList
     }
 
 
     /**
-     * [DB]ユーザ検索処理
+     * [Repository] ユーザ検索処理
      *
-     *
-     * loginUserと一致するユーザを取得する<br></br>
+     * userIdと一致するユーザを取得する<br>
      * ただし、一致するユーザーがいない場合はnullとなる
      *
-     *
-     * @param loginUser Authenticationから取得したユーザID
-     * @return UserEntity<br></br>
-     * フィールド(UserEntity)<br></br>
-     * id, name, nameKana, gender, password, address, tel, email, note, admin_flg, del_flg
+     * @param userId 取得したいユーザのユーザID
+     * @return UserEntity ユーザ情報
      */
-    private fun selectUserByLoginUser(loginUser: String): UserEntity? {
-        val userEntityOpt: Optional<UserEntity> = userRepository!!.findById(loginUser)
-
-        //ユーザを取得できなかったとき
-        return if (!userEntityOpt.isPresent()) {
-            null
-        } else userEntityOpt.get()
-
-        //UserEntityを返す
+    private fun selectUser(userId: String?): UserEntity? {
+        return userRepository.selectUser(userId)
     }
 
 
     /**
-     * [DB]1日ごとユーザの確定スケジュール検索処理
+     * [Repository] ホーム画面の確定スケジュール検索処理
      *
+     * 日付から該当する年月の確定スケジュールを取得する<br>
+     * ただし、ホーム画面に表示する上限の日付が年月をまたいでいるときは2種類の確定スケジュールが取得される<br>
+     * また、確定スケジュールが何も登録されていないときはエレメントは必ずnullとなる
      *
-     * 取得したい日付(ymd)から該当する確定スケジュールを1日ごとに(1週間分)取得する<br></br>
-     * ただし、スケジュールが何も登録されていないときはエレメントはnullとなる
-     *
-     *
-     * @param year LocalDateから取得した年(int)
-     * @param month LocalDateから取得した月(int)
-     * @param loginUser Authenticationから取得したユーザID
-     * @return List<ScheduleEntity> <br></br>
-     * フィールド(List&lt;ScheduleEntity&gt;)<br></br>
-     * id, ym, user, 1, 2, 3, 4, 5... 30, 31
-    </ScheduleEntity> */
-    private fun selectScheduleForOnweek(nowYmd: String, loginUser: String): List<ScheduleEntity?> {
+     * @param nowYmd ホーム画面に表示させる確定スケジュールの下限の日付(YYYYMMDD)
+     * @param userId 取得したい確定スケジュールのユーザID
+     * @return List<ScheduleEntity?> 確定スケジュール<br>
+     * 同じ年月: 要素数1, 年月をまたいでいるとき: 要素数2<br>
+     * 該当する年月の確定スケジュールが存在しているとき: エレメント not null, 存在していないとき: エレメント null
+     **/
+    private fun selectScheduleForHome(nowYmd: String?, userId: String?): List<ScheduleEntity?> {
 
-        //1日ごと(1週間分)のスケジュールを格納するための変数
-        val ScheduleEntityList: MutableList<ScheduleEntity?> = ArrayList()
+        // 確定スケジュールを格納するための変数
+        val scheduleEntityList: MutableList<ScheduleEntity?> = ArrayList()
 
-        //現在の日付をLocalDateで取得
+        // 現在の日付とホーム画面に表示する上限の日付をLocalDateで取得
         val commonLogic = CommonLogic()
-        val nowYmdLd: LocalDate = commonLogic.getLocalDateByYmd(nowYmd)
+        val nowLd = commonLogic.getLocalDate(nowYmd)
+        val afterWeekLd = nowLd!!.plusDays(Const.SCHEDULE_HOME_CALENDAR_DISPLAY_LIMIT_DAY)
 
-        //7回(1週間分)ループする
-        for (i in 0 until Const.HOME_DISPLAY_SCHEDULE_DAY) {
+        // ホーム画面に表示する上限の日付が月をまたいでいるとき
+        if (nowLd.dayOfMonth != afterWeekLd.dayOfMonth) {
 
-            //現在の日付 + ループ回数日の年月を取得する
-            val localDate = nowYmdLd.plusDays(i.toLong())
-            val ym: String = commonLogic.toStringYmFormatSixByYearMonth(localDate.year, localDate.monthValue)
-
-            //取得した年月からスケジュールを取得し、ScheduleEntityListに格納
-            val scheduleEntity = scheduleRepository!!.findByYmAndUser(ym, loginUser)
-            ScheduleEntityList.add(scheduleEntity)
+            // 現在の日付とホーム画面に表示する上限の日付の年月の確定スケジュールを取得
+            scheduleEntityList.add(scheduleRepository.selectSchedule(nowYmd, userId))
+            val afterWeekYmd = commonLogic.toStringYmd(afterWeekLd.year, afterWeekLd.monthValue, afterWeekLd.dayOfMonth)
+            scheduleEntityList.add(scheduleRepository.selectSchedule(afterWeekYmd, userId))
+            return scheduleEntityList
         }
-        return ScheduleEntityList
+
+        // 現在の日付の確定スケジュールを取得
+        scheduleEntityList.add(scheduleRepository.selectSchedule(nowYmd, userId))
+        return scheduleEntityList
     }
 
 
     /**
-     * [DB]1日ごとスケジュール時間区分取得処理
+     * [Repository] ホーム画面のスケジュール時間区分検索処理
      *
      *
-     * 取得したい日付(ymd)から該当するスケジュール時間区分を1日ごとに(1週間分)取得する<br></br>
-     * また、現在日(ymd)に該当するスケジュール時間区分が複数登録されているときは最新のスケジュール時間区分が取得される<br></br>
-     * ただし、スケジュール時間区分が何も登録されていないときはエレメントはnullとなる
+     * 日付から該当する年月のスケジュール時間区分を取得する<br>
+     * ただし、ホーム画面に表示する上限の日付が年月をまたいでいるときは2種類のスケジュール時間区分が取得される<br>
+     * また、スケジュール時間区分が何も登録されていないときはエレメントは必ずnullとなる
      *
      *
-     * @param ymd 取得したいスケジュール時間区分の日付(YYYYMMDD)
-     * @return List<ScheduleTimeEntity><br></br>
-     * フィールド(List&lt;ScheduleTimeEntity&gt;)<br></br>
-     * id, endYmd, name1, startHm1, endHM1, restHm1... startHm7, endHM7, restHm7
-    </ScheduleTimeEntity> */
-    private fun selectScheduleTimeForOneweek(nowYmd: String): List<ScheduleTimeEntity?> {
+     * @param nowYmd ホーム画面に表示させるスケジュール時間区分の下限の日付(YYYYMMDD)
+     * @return List<ScheduleTimeEntity?> スケジュール時間区分<br>
+     * 同じ年月: 要素数1, 年月をまたいでいるとき: 要素数2<br>
+     * 該当する年月のスケジュール時間区分が存在しているとき: エレメント not null, 存在していないとき: エレメント null
+     **/
+    private fun selectScheduleTimeForHome(nowYmd: String): List<ScheduleTimeEntity?> {
 
-        //1日ごと(1週間分)のスケジュール時間区分を格納するための変数
-        val ScheduleTimeEntityList: MutableList<ScheduleTimeEntity?> = ArrayList()
+        // スケジュール時間区分を格納するための変数
+        val scheduleTimeEntityList: MutableList<ScheduleTimeEntity?> = ArrayList()
 
-        //現在の日付をLocalDateで取得
+        // 現在の日付とホーム画面に表示する上限の日付をLocalDateで取得
         val commonLogic = CommonLogic()
-        val nowYmdLd: LocalDate = commonLogic.getLocalDateByYmd(nowYmd)
+        val nowLd = commonLogic.getLocalDate(nowYmd)
+        val afterWeekLd = nowLd!!.plusDays(Const.SCHEDULE_HOME_CALENDAR_DISPLAY_LIMIT_DAY)
 
-        //7回(1週間分)ループする
-        for (i in 0 until Const.HOME_DISPLAY_SCHEDULE_DAY) {
+        // ホーム画面に表示する上限の日付が月をまたいでいるとき
+        if (nowLd.dayOfMonth != afterWeekLd.dayOfMonth) {
 
-            //現在の日付 + ループ回数日の年月を取得する
-            val localDate = nowYmdLd.plusDays(i.toLong())
-            val ymd: String =
-                commonLogic.toStringYmdByYearMonthDay(localDate.year, localDate.monthValue, localDate.dayOfMonth)
-
-            //取得した年月からスケジュール時間区分を取得し、ScheduleTimeEntityListに格納
-            val scheduleTimeEntity = scheduleTimeRepository!!.selectScheduleTimeByYmd(ymd)
-            ScheduleTimeEntityList.add(scheduleTimeEntity)
+            // 現在の日付とホーム画面に表示する上限の日付の年月の確定スケジュールを取得
+            scheduleTimeEntityList.add(scheduleTimeRepository!!.selectScheduleTime(nowYmd))
+            val afterWeekYmd = commonLogic.toStringYmd(afterWeekLd.year, afterWeekLd.monthValue, afterWeekLd.dayOfMonth)
+            scheduleTimeEntityList.add(scheduleTimeRepository.selectScheduleTime(afterWeekYmd))
+            return scheduleTimeEntityList
         }
-        return ScheduleTimeEntityList
+
+        // 現在の日付の確定スケジュールを取得
+        scheduleTimeEntityList.add(scheduleTimeRepository!!.selectScheduleTime(nowYmd))
+        return scheduleTimeEntityList
     }
 }
