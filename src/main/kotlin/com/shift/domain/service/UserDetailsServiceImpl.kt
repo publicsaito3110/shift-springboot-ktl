@@ -11,7 +11,6 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
 
 
 /**
@@ -39,21 +38,16 @@ class UserDetailsServiceImpl: BaseService(), UserDetailsService {
     override fun loadUserByUsername(username: String): UserDetails {
 
         // ログイン時に入力されたユーザIDから検索
-        val userEntityOpt: Optional<UserEntity> = userRepository.findById(username)
+        val userEntity: UserEntity? = userRepository.selectUser(username)
 
         // ユーザIDと一致するユーザが存在しなかったとき
-        if (!userEntityOpt.isPresent) {
+        if (userEntity == null) {
             throw UsernameNotFoundException("$username is not found")
         }
 
-        // UserEntityで取得
-        val userEntity: UserEntity = userEntityOpt.get()
-
-        // User(UserDetailsインターフェースの実装クラス)に登録されているユーザ権限、ユーザID, パスワードをセットして返す
+        // User(UserDetailsインターフェースの実装クラス)に登録されているユーザ権限、ユーザID, パスワードをセット
         val grantedAuthorities: HashSet<GrantedAuthority> = HashSet<GrantedAuthority>()
         grantedAuthorities.add(SimpleGrantedAuthority(userEntity.adminFlgFormatRole()))
         return User(userEntity.id, userEntity.password, grantedAuthorities)
     }
-
-
 }
