@@ -123,7 +123,7 @@ class CalendarService: BaseService() {
      * @return ScheduleEntity 指定されたユーザの1ヶ月の確定スケジュール
      */
     private fun selectSchedule(ym: String?, userId: String?): ScheduleEntity? {
-        return scheduleRepository.findByYmAndUser(ym, userId)
+        return scheduleRepository.selectSchedule(ym, userId)
     }
 
 
@@ -139,6 +139,6 @@ class CalendarService: BaseService() {
      * @return ScheduleTimeEntity 指定した年月のスケジュール時間区分
      */
     private fun selectScheduleTime(ymd: String?): ScheduleTimeEntity? {
-        return scheduleTimeRepository.selectScheduleTimeByYmd(ymd)
+        return scheduleTimeRepository.selectScheduleTime(ymd)
     }
 }
