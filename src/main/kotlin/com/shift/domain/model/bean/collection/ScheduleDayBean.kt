@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor
  */
 @AllArgsConstructor
 @NoArgsConstructor
-class HomeDayScheduleBean {
+class ScheduleDayBean {
 
     var month: Int? = 0
 
