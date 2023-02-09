@@ -1,16 +1,14 @@
 package com.shift.domain.service
 
-import com.shift.common.CommonUtil
 import com.shift.common.Const
-import com.shift.domain.model.bean.collection.AccountBean
 import com.shift.domain.model.bean.LoginAuthBean
+import com.shift.domain.model.bean.collection.AccountBean
 import com.shift.domain.model.entity.UserEntity
 import com.shift.domain.repository.UserRepository
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.*
 import javax.servlet.http.HttpSession
 
 
@@ -124,20 +122,10 @@ class LoginService: BaseService() {
      * userIdと一致するユーザIDのユーザを取得する<br>
      * ただし、一致するユーザーがいないときはnullとなる
      *
-     * @param userId 取得したいユーザのユーザID
-     * @return UserEntity? ユーザIDと一致したユーザ
+     * @param userId 取得したいユーザ情報のユーザID
+     * @return UserEntity? ユーザ情報
      */
     private fun selectUser(userId: String?): UserEntity? {
-
-        // loginUserと一致するユーザを検索
-        val trimUserId: String = CommonUtil.changeEmptyByNull(userId)
-        val userEntityOpt: Optional<UserEntity> = userRepository.findById(trimUserId)
-
-        // ユーザが存在しないとき
-        if (!userEntityOpt.isPresent) {
-            return null
-        }
-
-        return userEntityOpt.get()
+        return userRepository.selectUser(userId)
     }
 }
