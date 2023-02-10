@@ -1,7 +1,7 @@
 package com.shift.domain.model.bean
 
-import com.shift.domain.model.bean.collection.HomeDayScheduleBean
 import com.shift.domain.model.bean.collection.NewsContentBean
+import com.shift.domain.model.bean.collection.ScheduleDayBean
 import com.shift.domain.model.entity.UserEntity
 import lombok.AllArgsConstructor
 import lombok.NoArgsConstructor
@@ -23,5 +23,5 @@ class HomeBean {
 
     var newsList: List<NewsContentBean>? = null
 
-    var dayScheduleList: List<HomeDayScheduleBean>? = null
+    var scheduleDayList: List<ScheduleDayBean>? = null
 }
