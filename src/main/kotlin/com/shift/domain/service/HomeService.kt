@@ -141,9 +141,13 @@ class HomeService: BaseService() {
             if (nowYmdLd.dayOfMonth == localDate!!.dayOfMonth) {
 
                // カレンダーの日付に該当する確定スケジュールを取得
-                val scheduleList = scheduleEntityList[0]!!.getScheduleDayList()
+                var scheduleList: List<String?> = ArrayList()
+                var schedule: String? = ""
                 val day = localDate.dayOfMonth
-                val schedule = scheduleList[day - 1]
+                if (scheduleEntityList[0] != null) {
+                    scheduleList = scheduleEntityList[0]!!.getScheduleDayList()
+                    schedule = scheduleList[day - 1]
+                }
 
                 // 確定スケジュールを登録済みか判定
                 val scheduleTimeEntity = scheduleTimeList[0]
@@ -162,9 +166,13 @@ class HomeService: BaseService() {
                 // 開始日の年月とループ中の年月が異なるとき
 
                 // カレンダーの日付に該当する確定スケジュールを取得
-                val scheduleList = scheduleEntityList[1]!!.getScheduleDayList()
+                var scheduleList: List<String?> = ArrayList()
+                var schedule: String? = ""
                 val day = localDate.dayOfMonth
-                val schedule = scheduleList[day - 1]
+                if (scheduleEntityList[1] != null) {
+                    scheduleList = scheduleEntityList[1]!!.getScheduleDayList()
+                    schedule = scheduleList[day - 1]
+                }
 
                 // 確定スケジュールを登録済みか判定
                 val scheduleTimeEntity = scheduleTimeList[1]
@@ -241,11 +249,9 @@ class HomeService: BaseService() {
     /**
      * [Repository] ホーム画面のスケジュール時間区分検索処理
      *
-     *
      * 日付から該当する年月のスケジュール時間区分を取得する<br>
      * ただし、ホーム画面に表示する上限の日付が年月をまたいでいるときは2種類のスケジュール時間区分が取得される<br>
      * また、スケジュール時間区分が何も登録されていないときはエレメントは必ずnullとなる
-     *
      *
      * @param nowYmd ホーム画面に表示させるスケジュール時間区分の下限の日付(YYYYMMDD)
      * @return List<ScheduleTimeEntity?> スケジュール時間区分<br>
