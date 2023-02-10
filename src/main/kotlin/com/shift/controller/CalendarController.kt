@@ -24,7 +24,8 @@ class CalendarController : BaseController() {
     /**
      * [Controller] カレンダー表示機能 (/calendar)
      *
-     * @param model
+     * @param authentication Authentication
+     * @param model Model
      * @return String
      */
     @RequestMapping("/calendar")

@@ -7,6 +7,9 @@ import org.springframework.stereotype.Controller
 import org.springframework.ui.Model
 import org.springframework.web.bind.annotation.RequestMapping
 
+
+
+
 /**
  * @author saito
  *
@@ -21,11 +24,12 @@ class LoginController : BaseController() {
     /**
      * [Controller] ログイン画面 (/login)
      *
-     * @param model
+     * @param authentication Authentication
+     * @param model Model
      * @return String
      */
     @RequestMapping("/login")
-    fun login(model: Model): String {
+    fun login(authentication: Authentication, model: Model): String {
 
         // View
         return "view/login/login"
@@ -35,7 +39,8 @@ class LoginController : BaseController() {
     /**
      * [Controller] ログイン認証機能 (/login/auth)
      *
-     * @param model
+     * @param authentication Authentication
+     * @param model Model
      * @return String
      */
     @RequestMapping("/login/auth")
@@ -47,6 +52,22 @@ class LoginController : BaseController() {
         // Service
         loginService.loginAuth(loginUser)
         // View
-        return "redirect:/calendar"
+        return "redirect:/home"
+    }
+
+
+    /**
+     * [Controller] セッションエラー画面 (/login/error)
+     *
+     * @param authentication Authentication
+     * @param model Model
+     * @return String
+     */
+    @RequestMapping("/login/error")
+    fun loginError(authentication: Authentication, model: Model): String {
+        model.addAttribute("isAlertLoginFailed", true)
+        model.addAttribute("errorMassage", "セッションの有効期限が切れました。もう一度ログインしてください。")
+        // View
+        return "view/login/login"
     }
 }

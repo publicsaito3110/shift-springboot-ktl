@@ -21,8 +21,8 @@ class LogoutController : BaseController() {
     /**
      * [Controller] ログアウト機能 (/logout)
      *
-     * @param authentication
-     * @param model
+     * @param authentication Authentication
+     * @param model Model
      * @return String
      */
     @RequestMapping("/logout")
