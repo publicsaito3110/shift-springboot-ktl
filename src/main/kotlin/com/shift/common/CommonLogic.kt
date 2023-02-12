@@ -11,6 +11,26 @@ class CommonLogic {
 
 
     /**
+     * 改行スペース変換処理
+     *
+     * HTMLの改行とスペースに対応させた文字列を返す<br>
+     * ただし、対象の文字列がnullのときは何もしない
+     *
+     * @param value 対象の文字列
+     * @return String HTML対応した文字列
+     */
+    fun changeAfterBreakLine(value: String?): String? {
+
+        if (value == null) {
+            return null
+        }
+        // 改行及びスペース対応
+        val afterBreakLine: String = value.replaceAfter(Const.CHARACTER_CODE_BREAK_LINE_ALL, Const.HTML_BR)
+        return afterBreakLine.replaceAfter(Const.CHARACTER_SPACE, Const.HTML_SPACE)
+    }
+
+
+    /**
      * LocalDate変換処理
      *
      * ymd(YYYYMMDD)をLocalDateで返す<br>
