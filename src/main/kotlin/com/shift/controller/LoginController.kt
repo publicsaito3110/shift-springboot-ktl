@@ -24,12 +24,11 @@ class LoginController : BaseController() {
     /**
      * [Controller] ログイン画面 (/login)
      *
-     * @param authentication Authentication
      * @param model Model
      * @return String
      */
     @RequestMapping("/login")
-    fun login(authentication: Authentication, model: Model): String {
+    fun login(model: Model): String {
 
         // View
         return "view/login/login"
@@ -59,12 +58,11 @@ class LoginController : BaseController() {
     /**
      * [Controller] セッションエラー画面 (/login/error)
      *
-     * @param authentication Authentication
      * @param model Model
      * @return String
      */
     @RequestMapping("/login/error")
-    fun loginError(authentication: Authentication, model: Model): String {
+    fun loginError(model: Model): String {
         model.addAttribute("isAlertLoginFailed", true)
         model.addAttribute("errorMassage", "セッションの有効期限が切れました。もう一度ログインしてください。")
         // View
