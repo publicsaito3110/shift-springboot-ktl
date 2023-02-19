@@ -112,4 +112,53 @@ class ScheduleUserNameDto: BaseEntity() {
 
     @Column(name = "day31")
     var day31: String? = null
+
+
+
+    /**
+     * 確定スケジュールList取得処理
+     *
+     * 日付ごとの確定スケジュールを日付順でListで取得する<br>
+     * ただし、確定スケジュールがnullまたは空文字でも格納される
+     *
+     * @param
+     * @return List<String?> 登録済みの確定スケジュールを格納したList
+     */
+    fun getScheduleDayList(): List<String?> {
+
+        // 確定スケジュールを日付順でListに格納
+        val dayList: MutableList<String?> = ArrayList()
+        dayList.add(day1)
+        dayList.add(day2)
+        dayList.add(day3)
+        dayList.add(day4)
+        dayList.add(day5)
+        dayList.add(day6)
+        dayList.add(day7)
+        dayList.add(day8)
+        dayList.add(day9)
+        dayList.add(day10)
+        dayList.add(day11)
+        dayList.add(day12)
+        dayList.add(day13)
+        dayList.add(day14)
+        dayList.add(day15)
+        dayList.add(day16)
+        dayList.add(day17)
+        dayList.add(day18)
+        dayList.add(day19)
+        dayList.add(day20)
+        dayList.add(day21)
+        dayList.add(day22)
+        dayList.add(day23)
+        dayList.add(day24)
+        dayList.add(day25)
+        dayList.add(day26)
+        dayList.add(day27)
+        dayList.add(day28)
+        dayList.add(day29)
+        dayList.add(day30)
+        dayList.add(day31)
+        return dayList
+    }
 }
