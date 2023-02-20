@@ -15,5 +15,5 @@ class CmnScheduleUserNameBean {
 
     var scheduleTimeEntity: ScheduleTimeEntity? = null
 
-    var scheduleUserAllArray: Array<Array<String>>? = null
+    var scheduleUserNameArray: Array<Array<String?>>? = null
 }
