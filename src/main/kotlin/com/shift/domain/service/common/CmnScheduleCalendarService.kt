@@ -36,7 +36,7 @@ class CmnScheduleCalendarService: BaseService() {
         // 指定された年月のカレンダーを取得
         val calendarList: List<Int?>  = calcCalendar(yearMonthArray[0], yearMonthArray[1])
         // 最終日の日付を取得
-        val lastDateYmd: String? = calcLastDateYmd(yearMonthArray[0], yearMonthArray[1])
+        val lastDateYmd: String? = CommonLogic().getLastDateYmd(yearMonthArray[0], yearMonthArray[1])
 
         // Beanにセット
         val cmnScheduleCalendarBean: CmnScheduleCalendarBean = CmnScheduleCalendarBean()
@@ -125,23 +125,6 @@ class CmnScheduleCalendarService: BaseService() {
 
         // 年月を配列に格納して返す
         return arrayOf(year, month)
-    }
-
-
-    /**
-     * 最終日の日付計算処理
-     *
-     * year, monthから最終日の日付(YYYYMMDD)に変換する<br>
-     * ただし、指定された年月が異常なときはnullとなる
-     *
-     * @param year 年(int)
-     * @param month 月(int)
-     * @return String? 指定された年月の最終日の日付(YYYYMMDD)
-     */
-    private fun calcLastDateYmd(year: Int, month: Int): String? {
-
-        // 指定されたyear, monthを最終日の日付(YYYYMMDD)に変換
-        return CommonLogic().getLastDateYmd(year, month)
     }
 
 
