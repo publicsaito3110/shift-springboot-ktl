@@ -17,9 +17,9 @@ class CalendarAllBean {
 
     var month = 0
 
-    var calendarList: List<Int>? = null
+    var calendarList: List<Int?>? = null
 
-    var scheduleUserAllArray: Array<Array<String>>? = null
+    var scheduleUserNameArray: Array<Array<String?>>? = null
 
     var afterYm: String? = null
 
