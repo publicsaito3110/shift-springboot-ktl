@@ -65,6 +65,8 @@ class CommonLogic {
      *
      * year, monthからその年月の最終日の日付をString(YYYYMMDD)の8桁で返す
      *
+     * @param year 年
+     * @param month 月
      * @return String 最終日の日付(YYYYMMDD)
      */
     fun getLastDateYmd(year: Int, month: Int): String? {
