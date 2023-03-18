@@ -54,6 +54,7 @@ public class Const {
 
         // セッション
         const val SESSION_KEYWORD_ACCOUNT_BEAN: String = "SESSION_KEY1_ACCOUNT_BEAN"
+        const val SESSION_KEYWORD_DM_UNREAD: String = "SESSION_KEY2_DM_UNREAD"
 
         //------------------
         // 正規表現 (pattern)
