@@ -11,6 +11,11 @@ public class Const {
 
     companion object {
 
+        //-----
+        // DM
+        //-----
+        const val DM_READ_FLG: String = "1"
+
         //-----------
         // NEWS
         //-----------
@@ -30,10 +35,10 @@ public class Const {
         val SCHEDULE_HTML_CLASS_DISPLAY_BG_COLOR_ARRAY: Array<String> = arrayOf("bg-teal", "bg-orange", "bg-pink", "bg-yellow", "bg-purple", "bg-cyan", "bg-gray")
         val SCHEDULE_HTML_CLASS_DISPLAY_BTN_COLOR_ARRAY: Array<String> = arrayOf("btn-teal", "btn-orange", "btn-pink", "btn-yellow", "btn-purple", "btn-cyan", "btn-gray")
 
-        //-----
-        // DM
-        //-----
-        const val DM_READ_FLG: String = "1"
+        //-------
+        // User
+        //-------
+        const val USER_DEL_FLG: String = "1"
 
         //-------
         // その他
