@@ -52,6 +52,7 @@ public class Const {
         const val CHARACTER_CODE_BREAK_LINE_ALL: String = "\r\n|\r|\n"
         const val CHARACTER_SPACE: String = " "
         const val CHARACTER_PERCENT: String = "%"
+        const val CHARACTER_TAB: String = "	"
 
         // HTMLタグ
         const val HTML_SPACE: String = "&nbsp;";
