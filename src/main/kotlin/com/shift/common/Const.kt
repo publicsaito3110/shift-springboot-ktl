@@ -31,6 +31,8 @@ public class Const {
         const val SCHEDULE_HOME_CALENDAR_DISPLAY_LIMIT_DAY: Long = 7
         const val SCHEDULE_RECORDABLE_MAX_DIVISION: Int = 7
         const val SCHEDULE_DAY_RECORDED: String = "1"
+        const val SCHEDULE_RECORDED: String = "1"
+        const val SCHEDULE_NOT_RECORDED: String = "0"
         val SCHEDULE_HTML_CLASS_DISPLAY_COLOR_ARRAY: Array<String> = arrayOf("teal", "orange", "pink", "yellow", "purple", "cyan", "gray")
         val SCHEDULE_HTML_CLASS_DISPLAY_BG_COLOR_ARRAY: Array<String> = arrayOf("bg-teal", "bg-orange", "bg-pink", "bg-yellow", "bg-purple", "bg-cyan", "bg-gray")
         val SCHEDULE_HTML_CLASS_DISPLAY_BTN_COLOR_ARRAY: Array<String> = arrayOf("btn-teal", "btn-orange", "btn-pink", "btn-yellow", "btn-purple", "btn-cyan", "btn-gray")
@@ -71,6 +73,17 @@ public class Const {
 
         // User
         const val PATTERN_USER_DEL_FLG: String = "1"
+
+        // Schedule
+        const val PATTERN_SCHEDULE_YM_INPUT = "^[0-9]{4}+(0[1-9]|1[0-2])$"
+        const val PATTERN_SCHEDULE_YM_LENGTH_MIN_INPUT = 6
+        const val PATTERN_SCHEDULE_YM_LENGTH_MAX_INPUT = 6
+        const val PATTERN_SCHEDULE_DAY_INPUT = "^(0[1-9]|[12][0-9]|3[01])$"
+        const val PATTERN_SCHEDULE_DAY_LENGTH_MIN_INPUT = 2
+        const val PATTERN_SCHEDULE_DAY_LENGTH_MAX_INPUT = 2
+        const val PATTERN_SCHEDULE_USER_INPUT_OPTIONAL = "^[A-Za-z0-9]{4}|^$"
+        const val PATTERN_SCHEDULE_USER_LENGTH_MIN_INPUT_OPTIONAL = 0
+        const val PATTERN_SCHEDULE_USER_LENGTH_MAX_INPUT_OPTIONAL = 4
     }
 
 }
