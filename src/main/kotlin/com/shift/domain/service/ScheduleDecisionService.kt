@@ -1,17 +1,16 @@
 package com.shift.domain.service
 
 import com.shift.common.Const
-import com.shift.domain.model.bean.CmnScheduleCalendarBean
-import com.shift.domain.model.bean.CmnScheduleUserNameBean
-import com.shift.domain.model.bean.ScheduleDecisionBean
-import com.shift.domain.model.bean.ScheduleDecisionModifyBean
+import com.shift.domain.model.bean.*
 import com.shift.domain.model.dto.ScheduleDayDto
 import com.shift.domain.model.dto.SchedulePreDayDto
+import com.shift.domain.model.entity.ScheduleEntity
 import com.shift.domain.model.entity.ScheduleTimeEntity
 import com.shift.domain.model.entity.UserEntity
 import com.shift.domain.repository.*
 import com.shift.domain.service.common.CmnScheduleCalendarService
 import com.shift.domain.service.common.CmnScheduleUserNameService
+import com.shift.form.ScheduleDecisionModifyForm
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Repository
 import org.springframework.stereotype.Service
@@ -28,6 +27,9 @@ class ScheduleDecisionService: BaseService() {
 
     @Autowired
     private lateinit var scheduleTimeRepository: ScheduleTimeRepository
+
+    @Autowired
+    private lateinit var scheduleRepository: ScheduleRepository
 
     @Autowired
     private lateinit var userRepository: UserRepository
@@ -101,6 +103,45 @@ class ScheduleDecisionService: BaseService() {
 
         // Beanにセット
         val scheduleDecisionModifyBean = ScheduleDecisionModifyBean()
+        scheduleDecisionModifyBean.year = ymdArray[0]
+        scheduleDecisionModifyBean.month = ymdArray[1]
+        scheduleDecisionModifyBean.day = ymdArray[2]
+        scheduleDecisionModifyBean.schedulePreDayList = schedulePreDayList
+        scheduleDecisionModifyBean.scheduleDayList = scheduleUserList
+        scheduleDecisionModifyBean.scheduleTimeEntity = scheduleTimeEntity
+        scheduleDecisionModifyBean.userList = userList
+        return scheduleDecisionModifyBean
+    }
+
+
+    /**
+     * [Service] 確定スケジュール修正機能 (/schedule-decision/modify/modify)
+     *
+     * @param scheduleDecisionModifyForm 入力値を格納したForm
+     * @return ScheduleDecisionModifyBean
+     */
+    fun scheduleDecisionModifyModify(scheduleDecisionModifyForm: ScheduleDecisionModifyForm): ScheduleDecisionModifyModifyBean {
+
+        // 確定スケジュールを更新する
+        val isUpdate: Boolean = updateSchedule(scheduleDecisionModifyForm)
+        // CmnScheduleCalendarServiceからカレンダー, 年月, 最終日を取得
+        val cmnScheduleCalendarBean: CmnScheduleCalendarBean = cmnScheduleCalendarService.generateCalendar(scheduleDecisionModifyForm.ym)
+        // 年, 月, 日をそれぞれ配列で取得
+        val ymdArray = calcYmdArray(scheduleDecisionModifyForm.ym!!, scheduleDecisionModifyForm.day!!)
+        // 1日分の予定スケジュールをユーザ毎に取得
+        val schedulePreDayList = selectSchedulePreDay(scheduleDecisionModifyForm.ym!!, scheduleDecisionModifyForm.day!!)
+        // 1日分の確定スケジュールをユーザ毎に取得
+        val scheduleUserList = selectScheduleDay(scheduleDecisionModifyForm.ym!!, scheduleDecisionModifyForm.day!!)
+        // スケジュール時間区分を取得
+        val scheduleTimeEntity = selectScheduleTime(cmnScheduleCalendarBean.lastDateYmd)
+        // 未退職ユーザを全て取得
+        val usersDbList: List<UserEntity> = selectUserNotDelFlg()
+        // 確定スケジュールに新規登録可能ユーザのみに変換
+        val userList: List<UserEntity> = calcUserRecordableSchedule(scheduleUserList, usersDbList)
+
+        // Beanにセット
+        val scheduleDecisionModifyBean = ScheduleDecisionModifyModifyBean()
+        scheduleDecisionModifyBean.isUpdate = isUpdate
         scheduleDecisionModifyBean.year = ymdArray[0]
         scheduleDecisionModifyBean.month = ymdArray[1]
         scheduleDecisionModifyBean.day = ymdArray[2]
@@ -389,5 +430,239 @@ class ScheduleDecisionService: BaseService() {
      */
     private fun selectUserNotDelFlg(): List<UserEntity> {
         return userRepository.selectUsersNotDelFlg(Const.USER_DEL_FLG)
+    }
+
+
+    /**
+     * [Repository] 確定スケジュール更新処理
+     *
+     * scheduleDecisionModifyFormから確定スケジュールに新規でユーザとスケジュール及び更新するユーザとスケジュールを登録する<br>
+     * ただし、確定スケジュールに新規登録するユーザがいない(ユーザが指定されていないまたはスケジュールを登録していない)ときは登録されない<br>
+     * 既に確定スケジュールに登録済みのユーザはスケジュールが登録していないときでもその情報が登録される
+     *
+     * @param scheduleDecisionModifyForm Formクラス
+     * @return boolean 更新判定<br>
+     * true: 更新したとき<br>
+     * false: 更新に失敗したとき
+     */
+    private fun updateSchedule(scheduleDecisionModifyForm: ScheduleDecisionModifyForm): Boolean {
+
+        //--------------------------
+        // 新規確定スケジュール追加
+        //--------------------------
+
+        // 登録する日付を取得
+        val ym = scheduleDecisionModifyForm.ym
+        val day = String.format("%02d", scheduleDecisionModifyForm.day!!.toInt())
+
+        // 新規登録するユーザIDとスケジュールを取得
+        val addUser: String = scheduleDecisionModifyForm.addScheduleArrayFormatString()
+        val addScheduleArray: Array<String?> = scheduleDecisionModifyForm.addScheduleArray
+
+        // 新規で登録するスケジュールがあるとき
+        if (addScheduleArray.contains(Const.SCHEDULE_RECORDED) && addUser.isNotEmpty()) {
+
+            // 対象の年月から新規で登録するユーザの確定スケジュールを検索する
+            var addNewUserScheduleEntity: ScheduleEntity? = scheduleRepository.selectSchedule(ym, addUser)
+
+            // 該当の年月に新規で登録するユーザが未登録のとき、値をインスタンス化して値をセットするする
+            if (addNewUserScheduleEntity == null) {
+                addNewUserScheduleEntity = ScheduleEntity()
+                addNewUserScheduleEntity.ym = ym
+                addNewUserScheduleEntity.user = addUser
+            }
+
+            // 新規で登録するユーザのスケジュール情報を取得
+            val addSchedule = scheduleDecisionModifyForm.addScheduleArrayFormatString()
+
+            // 登録する日付(day)に応じてスケジュール情報をセットする
+            if ("01" == day) {
+                addNewUserScheduleEntity.day1 = addSchedule
+            } else if ("02" == day) {
+                addNewUserScheduleEntity.day2 = addSchedule
+            } else if ("03" == day) {
+                addNewUserScheduleEntity.day3 = addSchedule
+            } else if ("04" == day) {
+                addNewUserScheduleEntity.day4 = addSchedule
+            } else if ("05" == day) {
+                addNewUserScheduleEntity.day5 = addSchedule
+            } else if ("06" == day) {
+                addNewUserScheduleEntity.day6 = addSchedule
+            } else if ("07" == day) {
+                addNewUserScheduleEntity.day7 = addSchedule
+            } else if ("08" == day) {
+                addNewUserScheduleEntity.day8 = addSchedule
+            } else if ("09" == day) {
+                addNewUserScheduleEntity.day9 = addSchedule
+            } else if ("10" == day) {
+                addNewUserScheduleEntity.day10 = addSchedule
+            } else if ("11" == day) {
+                addNewUserScheduleEntity.day11 = addSchedule
+            } else if ("12" == day) {
+                addNewUserScheduleEntity.day12 = addSchedule
+            } else if ("13" == day) {
+                addNewUserScheduleEntity.day13 = addSchedule
+            } else if ("14" == day) {
+                addNewUserScheduleEntity.day14 = addSchedule
+            } else if ("15" == day) {
+                addNewUserScheduleEntity.day15 = addSchedule
+            } else if ("16" == day) {
+                addNewUserScheduleEntity.day16 = addSchedule
+            } else if ("17" == day) {
+                addNewUserScheduleEntity.day17 = addSchedule
+            } else if ("18" == day) {
+                addNewUserScheduleEntity.day18 = addSchedule
+            } else if ("19" == day) {
+                addNewUserScheduleEntity.day19 = addSchedule
+            } else if ("20" == day) {
+                addNewUserScheduleEntity.day20 = addSchedule
+            } else if ("21" == day) {
+                addNewUserScheduleEntity.day21 = addSchedule
+            } else if ("22" == day) {
+                addNewUserScheduleEntity.day22 = addSchedule
+            } else if ("23" == day) {
+                addNewUserScheduleEntity.day23 = addSchedule
+            } else if ("24" == day) {
+                addNewUserScheduleEntity.day24 = addSchedule
+            } else if ("25" == day) {
+                addNewUserScheduleEntity.day25 = addSchedule
+            } else if ("26" == day) {
+                addNewUserScheduleEntity.day26 = addSchedule
+            } else if ("27" == day) {
+                addNewUserScheduleEntity.day27 = addSchedule
+            } else if ("28" == day) {
+                addNewUserScheduleEntity.day28 = addSchedule
+            } else if ("29" == day) {
+                addNewUserScheduleEntity.day29 = addSchedule
+            } else if ("30" == day) {
+                addNewUserScheduleEntity.day30 = addSchedule
+            } else if ("31" == day) {
+                addNewUserScheduleEntity.day31 = addSchedule
+            }
+
+            // 新規で追加したスケジュールをDB更新
+            scheduleRepository.save(addNewUserScheduleEntity)
+        }
+
+
+        //-------------------------
+        // 登録済みスケジュール更新
+        //-------------------------
+
+        // 既存で登録されたユーザと更新スケジュールを取得
+        val userArray2 = scheduleDecisionModifyForm.userArray
+        val scheduleArray2 = scheduleDecisionModifyForm.scheduleArray
+
+        // 該当する年月の全てのユーザの確定スケジュールをすべて取得
+        val scheduleList: MutableList<ScheduleEntity> = scheduleRepository.selectSchedule(ym).toMutableList()
+
+        // 該当の年月に登録されているユーザだけループ
+        for (i in scheduleList.indices) {
+            val entity = scheduleList[i]
+
+            // 既存で登録されているユーザだけループ
+            for (j in userArray2!!.indices) {
+
+                // 既に登録済みのユーザ取得
+                val userArray = userArray2[j]
+
+                // 更新するユーザが一致したとき
+                if (userArray[0] == entity.user) {
+
+                    // DBに更新するスケジュールを格納する
+                    var schedule = ""
+
+                    // 対象のユーザのスケジュール時間区分ごとの更新スケジュールを配列で所得
+                    val scheduleArray = scheduleArray2!![j]
+
+                    // スケジュール時間区分ごとの更新スケジュールだけループ
+                    for (k in 0 until Const.SCHEDULE_RECORDABLE_MAX_DIVISION) {
+
+                        if (scheduleArray.size <= k) {
+                            // スケジュール時間区分が存在しないとき、未登録情報を格納
+                            schedule += Const.SCHEDULE_NOT_RECORDED
+                        } else if (Const.SCHEDULE_RECORDED != scheduleArray[k]) {
+                            // スケジュールが登録されていないとき、未登録情報を格納
+                            schedule += Const.SCHEDULE_NOT_RECORDED
+                        } else {
+                            // スケジュールが登録されているとき、登録情報を格納
+                            schedule += Const.SCHEDULE_RECORDED
+                        }
+                    }
+
+                    // 該当の日付のスケジュールを更新する
+                    if ("01" == day) {
+                        entity.day1 = schedule
+                    } else if ("02" == day) {
+                        entity.day2 = schedule
+                    } else if ("03" == day) {
+                        entity.day3 = schedule
+                    } else if ("04" == day) {
+                        entity.day4 = schedule
+                    } else if ("05" == day) {
+                        entity.day5 = schedule
+                    } else if ("06" == day) {
+                        entity.day6 = schedule
+                    } else if ("07" == day) {
+                        entity.day7 = schedule
+                    } else if ("08" == day) {
+                        entity.day8 = schedule
+                    } else if ("09" == day) {
+                        entity.day9 = schedule
+                    } else if ("10" == day) {
+                        entity.day10 = schedule
+                    } else if ("11" == day) {
+                        entity.day11 = schedule
+                    } else if ("12" == day) {
+                        entity.day12 = schedule
+                    } else if ("13" == day) {
+                        entity.day13 = schedule
+                    } else if ("14" == day) {
+                        entity.day14 = schedule
+                    } else if ("15" == day) {
+                        entity.day15 = schedule
+                    } else if ("16" == day) {
+                        entity.day16 = schedule
+                    } else if ("17" == day) {
+                        entity.day17 = schedule
+                    } else if ("18" == day) {
+                        entity.day18 = schedule
+                    } else if ("19" == day) {
+                        entity.day19 = schedule
+                    } else if ("20" == day) {
+                        entity.day20 = schedule
+                    } else if ("21" == day) {
+                        entity.day21 = schedule
+                    } else if ("22" == day) {
+                        entity.day22 = schedule
+                    } else if ("23" == day) {
+                        entity.day23 = schedule
+                    } else if ("24" == day) {
+                        entity.day24 = schedule
+                    } else if ("25" == day) {
+                        entity.day25 = schedule
+                    } else if ("26" == day) {
+                        entity.day26 = schedule
+                    } else if ("27" == day) {
+                        entity.day27 = schedule
+                    } else if ("28" == day) {
+                        entity.day28 = schedule
+                    } else if ("29" == day) {
+                        entity.day29 = schedule
+                    } else if ("30" == day) {
+                        entity.day30 = schedule
+                    } else if ("31" == day) {
+                        entity.day31 = schedule
+                    }
+
+                    // 更新後のスケジュールをセットする
+                    scheduleList[i] = entity
+                }
+            }
+        }
+
+        // 更新した確定スケジュールを全てDB更新
+        scheduleRepository.saveAll(scheduleList)
+        return true
     }
 }
