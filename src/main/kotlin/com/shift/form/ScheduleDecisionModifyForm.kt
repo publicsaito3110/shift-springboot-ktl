@@ -31,9 +31,9 @@ class ScheduleDecisionModifyForm {
     )
     var day: String? = null
 
-    var userArray: Array<Array<String>>? = null
+    var userArray: Array<Array<String?>>? = null
 
-    var scheduleArray: Array<Array<String>>? = null
+    var scheduleArray: Array<Array<String?>>? = null
 
     @Pattern(regexp = Const.PATTERN_SCHEDULE_USER_INPUT_OPTIONAL, message = "入力値が不正です")
     @Length(
@@ -49,8 +49,6 @@ class ScheduleDecisionModifyForm {
     /**
      * [Constractor] ScheduleDecisionModifyForm
      *
-     *
-     *
      * 1日のスケジュール及びスケジュールに新規登録可能ユーザの値をセットする
      *
      * @param scheduleDayList 1日のスケジュール
@@ -59,7 +57,7 @@ class ScheduleDecisionModifyForm {
      * @param day 登録する日
      * @return ScheduleDecisionModifyForm
      */
-    constructor(scheduleDayList: List<ScheduleDayDto>?, year: String, month: String, day: String?) {
+    constructor(scheduleDayList: List<ScheduleDayDto>?, year: String?, month: String?, day: String?) {
 
         // 登録するスケジュールの年月をセット
         ym = year + month
@@ -70,38 +68,35 @@ class ScheduleDecisionModifyForm {
             return
         }
 
-        // userArrayとscheduleArrayの要素数を確定スケジュールに登録済みのユーザ数で指定
-        userArray = Array<Array<String?>>(scheduleDayList.size) { arrayOfNulls(2) }
-        scheduleArray = Array<Array<String?>>(scheduleDayList.size) {
-            arrayOfNulls(
-                Const.SCHEDULE_RECORDABLE_MAX_DIVISION
-            )
-        }
+        // 登録ユーザと登録済みスケジュールの要素数を確定スケジュールの登録済みのユーザ数で指定
+        userArray = Array(scheduleDayList.size) { arrayOfNulls(2) }
+        scheduleArray = Array(scheduleDayList.size) { arrayOfNulls(Const.SCHEDULE_RECORDABLE_MAX_DIVISION) }
 
-        //--------------------------------------------------------------------
-        //登録したスケジュール通りになるようにuserScheduleArrayに値を代入する
-        //--------------------------------------------------------------------
+        //--------------------------------------------------------------
+        //　登録したスケジュール通りになるようにuserScheduleArrayに値を代入する
+        //--------------------------------------------------------------
 
         // 確定スケジュール登録済みユーザだけループする
         for (i in scheduleDayList.indices) {
 
             // 確定スケジュールに登録済みのユーザ名とIDをそれぞれ格納
-            userArray.get(i)[0] = scheduleDayList[i].userId
-            userArray.get(i)[1] = scheduleDayList[i].userName
+            userArray!![i][0] = scheduleDayList[i].userId
+            userArray!![i][1] = scheduleDayList[i].userName
 
             // スケジュールが登録済みか判定した配列を取得
-            val isScheduleRecordedArray: Array<Boolean> = scheduleDayList[i].scheduleFormatTFArray()
+            val isScheduleRecordedArray: Array<Boolean?> = scheduleDayList[i].scheduleFormatTFArray()
 
             // スケジュール登録済み判定したスケジュール情報だけループする
             for (j in isScheduleRecordedArray.indices) {
                 val isScheduleRecorded = isScheduleRecordedArray[j]
-                if (!isScheduleRecorded) {
+
+                if (!isScheduleRecorded!!) {
                     // スケジュールが登録されていないとき、未登録の情報を格納する
-                    scheduleArray.get(i)[j] = Const.SCHEDULE_NOT_RECORDED
+                    scheduleArray!![i][j] = Const.SCHEDULE_NOT_RECORDED
                     continue
                 } else {
-                    //スケジュールが登録されているとき、登録済みの情報を格納する
-                    scheduleArray.get(i)[j] = Const.SCHEDULE_RECORDED
+                    //　スケジュールが登録されているとき、登録済みの情報を格納する
+                    scheduleArray!![i][j] = Const.SCHEDULE_RECORDED
                 }
             }
         }
@@ -111,12 +106,9 @@ class ScheduleDecisionModifyForm {
     /**
      * 新規スケジュール文字列変換処理
      *
-     *
-     *
-     * 新規スケジュールを配列から文字列へ返還する<br></br>
+     * 新規スケジュールを配列から文字列へ返還する<br>
      * ただし、スケジュール時間区分と同じ桁数となる
      *
-     * @param void
      * @return String 配列から文字列に変換された新規スケジュール
      */
     fun addScheduleArrayFormatString(): String {

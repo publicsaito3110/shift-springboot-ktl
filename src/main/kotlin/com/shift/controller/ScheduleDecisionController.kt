@@ -5,6 +5,7 @@ import com.shift.domain.model.bean.ScheduleDecisionBean
 import com.shift.domain.model.bean.ScheduleDecisionModifyBean
 import com.shift.domain.service.HomeService
 import com.shift.domain.service.ScheduleDecisionService
+import com.shift.form.ScheduleDecisionModifyForm
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Controller
@@ -63,7 +64,7 @@ class ScheduleDecisionController : BaseController() {
         model.addAttribute("bean", scheduleDecisionModifyBean)
         model.addAttribute("htmlColorArray", Const.SCHEDULE_HTML_CLASS_DISPLAY_COLOR_ARRAY)
         model.addAttribute("htmlBgColorArray", Const.SCHEDULE_HTML_CLASS_DISPLAY_BG_COLOR_ARRAY)
-        model.addAttribute("form", ScheduleDecisionModifyForm(scheduleDecisionModifyBean.getScheduleDayList(), scheduleDecisionModifyBean.getYear(), scheduleDecisionModifyBean.getMonth(), scheduleDecisionModifyBean.getDay()))
+        model.addAttribute("form", ScheduleDecisionModifyForm(scheduleDecisionModifyBean.scheduleDayList, scheduleDecisionModifyBean.year, scheduleDecisionModifyBean.month, scheduleDecisionModifyBean.day))
         model.addAttribute("isModalResult", false)
         // View
         return "view/schedule-decision/schedule-decision-modify"
