@@ -23,6 +23,19 @@ interface ScheduleRepository: BaseRepository<ScheduleEntity, Int> {
      * @param userId 取得したいユーザID
      * @return ScheduleEntity
      */
-    @Query(value = "SELECT s.* FROM schedule WHERE s.ym = :ym AND s.user = :userId;", nativeQuery = true)
+    @Query(value = "SELECT s.* FROM schedule s WHERE s.ym = :ym AND s.user = :userId", nativeQuery = true)
     fun selectSchedule(ym: String?, userId: String?): ScheduleEntity?
+
+
+    /**
+     * [Repository] 確定スケジュール検索処理
+     *
+     * 年月と一致する全てのユーザの確定スケジュールを取得する<br></br>
+     * ただし、該当のスケジュールがない場合はEmptyとなる
+     *
+     * @param ym 取得したいスケジュールの年月
+     * @return List<ScheduleEntity> 全てのユーザの確定スケジュール
+     **/
+    @Query(value = "SELECT s.* FROM schedule s WHERE s.ym = :ym", nativeQuery = true)
+    fun selectSchedule(ym: String?): List<ScheduleEntity>
 }
